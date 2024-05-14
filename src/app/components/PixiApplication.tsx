@@ -1,5 +1,7 @@
+/* eslint-disable @next/next/no-img-element */
 import { FC, ReactNode, use, useCallback, useEffect, useState } from 'react'
 import { Application, Assets, Container, Sprite } from 'pixi.js'
+import { getImageData } from '../utils/getImageData'
 
 export interface PixiApplicationProps {
   children?: ReactNode
@@ -73,5 +75,26 @@ export const PixiApplication: FC<PixiApplicationProps> = (props) => {
     init()
   }, [init, isMounted])
 
-  return <div>{children}</div>
+  return (
+    <div>
+      {children}
+      <img
+        style={{
+          width: '400px',
+        }}
+        src='/image.jpg'
+        alt='image'
+        id='img'
+      />
+
+      <button
+        onClick={() => {
+          const result = getImageData()
+
+          console.log(result)
+        }}>
+        click
+      </button>
+    </div>
+  )
 }
