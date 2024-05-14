@@ -1,11 +1,15 @@
+'use client'
+
 /* eslint-disable @next/next/no-img-element */
 import { FC, ReactNode, use, useCallback, useEffect, useState } from 'react'
-import { Application, Assets, Container, Sprite } from 'pixi.js'
+import { Application, Assets, Container, Graphics, Sprite } from 'pixi.js'
 import { getImageData } from '../utils/getImageData'
 
 export interface PixiApplicationProps {
   children?: ReactNode
 }
+
+const random = (min: number, max: number) => Math.random() * (max - min) + min
 
 export const PixiApplication: FC<PixiApplicationProps> = (props) => {
   const { children } = props
@@ -16,13 +20,16 @@ export const PixiApplication: FC<PixiApplicationProps> = (props) => {
   }, [])
 
   const init = useCallback(async () => {
-    console.log('init')
-
     // Create a new application
     const app = new Application()
 
+    app.init({
+      antialias: true,
+      resizeTo: window,
+    })
+
     // Initialize the application
-    await app.init({ background: '#1099bb', resizeTo: window })
+    await app.init({ background: '#111111', resizeTo: window })
 
     // Append the application canvas to the document body
     document.body.appendChild(app.canvas)
@@ -30,29 +37,36 @@ export const PixiApplication: FC<PixiApplicationProps> = (props) => {
     // Create and add a container to the stage
     const container = new Container()
 
-    app.stage.addChild(container)
-
     // Load the bunny texture
-    const texture = await Assets.load('https://pixijs.com/assets/bunny.png')
+    // const texture = await Assets.load('https://pixijs.com/assets/bunny.png')
 
-    const bunnies: Sprite[] = []
+    const bunnies: Graphics[] = []
+
+    const stageWidth = window.innerWidth
+    const stageHeight = window.innerHeight
+
+    console.log(stageWidth, stageHeight)
     // Create a 5x5 grid of bunnies in the container
-    for (let i = 0; i < 10000; i++) {
-      const bunny = new Sprite(texture)
+    for (let i = 0; i < 50000; i++) {
+      const bunny = new Graphics()
+      bunny.circle(0, 0, 2)
+      bunny.fill(0xde3249, 1)
 
-      bunny.x = (i % 50) * 40
-      bunny.y = Math.floor(i / 50) * 40
+      bunny.x = Math.random() * stageWidth
+      bunny.y = Math.random() * stageHeight
       bunnies.push(bunny)
       container.addChild(bunny)
     }
 
     // Move the container to the center
-    container.x = app.screen.width / 10
-    container.y = app.screen.height / 10
+    container.x = 0
+    container.y = 0
+
+    app.stage.addChild(container)
 
     // Center the bunny sprites in local container coordinates
-    container.pivot.x = container.width / 2
-    container.pivot.y = container.height / 2
+    // container.pivot.x = container.width / 2
+    // container.pivot.y = container.height / 2
 
     // Listen for animate update
     app.ticker.add((time) => {
@@ -60,11 +74,10 @@ export const PixiApplication: FC<PixiApplicationProps> = (props) => {
       // * use delta to create frame-independent transform *
       // container.rotation -= 0.01 * time.deltaTime
       bunnies.forEach((bunny) => {
-        bunny.rotation += 0.01 * time.deltaTime
-
+        // bunny.rotation += Math.random() * 0.01 * time.deltaTime
         // random move
-        bunny.x += Math.random() * 2 - 1
-        bunny.y += Math.random() * 2 - 1
+        // bunny.x += random(-1, 1) * time.deltaTime
+        // bunny.y += random(-1, 1) * time.deltaTime
       })
     })
   }, [])
@@ -78,23 +91,34 @@ export const PixiApplication: FC<PixiApplicationProps> = (props) => {
   return (
     <div>
       {children}
-      <img
+
+      <div
         style={{
-          width: '400px',
-        }}
-        src='/image.jpg'
-        alt='image'
-        id='img'
-      />
-
-      <button
-        onClick={() => {
-          const result = getImageData()
-
-          console.log(result)
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          bottom: 0,
+          width: 200,
+          background: 'gray',
         }}>
-        click
-      </button>
+        <img
+          style={{
+            display: 'block',
+          }}
+          src='/image.jpg'
+          alt='image'
+          id='img'
+        />
+
+        <button
+          onClick={() => {
+            const result = getImageData()
+
+            console.log(result)
+          }}>
+          click
+        </button>
+      </div>
     </div>
   )
 }
