@@ -2,6 +2,7 @@
 
 import { FC, ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import p5 from 'p5'
+import { Particle } from './ParticleClass'
 
 export interface P5ApplicationProps {
   children?: ReactNode
@@ -13,19 +14,39 @@ export const P5Application: FC<P5ApplicationProps> = (props) => {
   const elementRef = useRef<HTMLDivElement>(null)
   const [isMounted, setIsMounted] = useState<boolean>(false)
 
-  const s = useCallback((p: p5) => {
+  const sketch = useCallback((p: p5, element: HTMLDivElement) => {
     let x = 120
     let y = 100
+    const height = 800
+    const width = 800
+    const particles: Particle[] = []
 
     p.setup = function () {
-      p.createCanvas(700, 410)
+      p.createCanvas(width, height).parent(element)
     }
 
     p.draw = function () {
-      p.background(0)
-      p.fill(255)
-      p.rect(x, y, 50, 50)
-      p.ellipse(150, 150, 80, 80)
+      p.background(244)
+      // p.frameRate(30)
+
+      for (let i = 0; i < 10; i++) {
+        particles.push(new Particle(x + 300, y, p))
+      }
+
+      // Looping through backwards to delete
+      for (let i = particles.length - 1; i >= 0; i--) {
+        let particle = particles[i]
+        particle.run()
+
+        if (particle.isDead()) {
+          particles.splice(i, 1)
+        }
+      }
+
+      const aliveParticles = particles.filter((particle) => !particle.isDead())
+
+      p.text(aliveParticles.length, 10, 20)
+      p.stroke(0)
     }
   }, [])
 
@@ -37,9 +58,7 @@ export const P5Application: FC<P5ApplicationProps> = (props) => {
     if (!isMounted) return
 
     import('p5').then(({ default: p5 }) => {
-      const p5instance = new p5(s)
-
-      p5instance.createCanvas(700, 410).parent(elementRef.current!)
+      const p5instance = new p5(sketch, elementRef.current!)
 
       p5instanceRef.current = p5instance
     })
@@ -47,7 +66,7 @@ export const P5Application: FC<P5ApplicationProps> = (props) => {
     return () => {
       p5instanceRef.current?.remove()
     }
-  }, [isMounted, s])
+  }, [isMounted, sketch])
 
   return (
     <div>

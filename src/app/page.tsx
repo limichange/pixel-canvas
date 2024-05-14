@@ -1,9 +1,11 @@
-import { P5Application } from './components/P5Application'
+'use client'
+
+import { PixiApplication } from './components/PixiApplication'
 
 export default function Home() {
   return (
     <main>
-      <P5Application />
+      <PixiApplication />
     </main>
   )
 }
