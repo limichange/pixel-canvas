@@ -2,8 +2,17 @@
 
 /* eslint-disable @next/next/no-img-element */
 import { FC, ReactNode, use, useCallback, useEffect, useState } from 'react'
-import { Application, Assets, Container, Graphics, Sprite } from 'pixi.js'
+import {
+  Application,
+  Assets,
+  Container,
+  Graphics,
+  Point,
+  Sprite,
+} from 'pixi.js'
 import { getImageData } from '../utils/getImageData'
+import { Vector } from 'p5'
+import { Pixel } from './Pixel'
 
 export interface PixiApplicationProps {
   children?: ReactNode
@@ -23,13 +32,12 @@ export const PixiApplication: FC<PixiApplicationProps> = (props) => {
     // Create a new application
     const app = new Application()
 
-    app.init({
-      antialias: true,
-      resizeTo: window,
-    })
-
     // Initialize the application
-    await app.init({ background: '#111111', resizeTo: window })
+    await app.init({
+      background: '#111111',
+      resizeTo: window,
+      antialias: true,
+    })
 
     // Append the application canvas to the document body
     document.body.appendChild(app.canvas)
@@ -47,22 +55,37 @@ export const PixiApplication: FC<PixiApplicationProps> = (props) => {
 
     console.log(stageWidth, stageHeight)
     // Create a 5x5 grid of bunnies in the container
-    for (let i = 0; i < 50000; i++) {
-      const bunny = new Graphics()
-      bunny.circle(0, 0, 2)
-      bunny.fill(0xde3249, 1)
+    const { pixels } = getImageData()
 
-      bunny.x = Math.random() * stageWidth
-      bunny.y = Math.random() * stageHeight
+    console.log(pixels)
+
+    const newPixels: Pixel[] = []
+
+    // random remove items
+    for (let i = 0; i < pixels.length; i += 1) {
+      if (Math.random() > 0.5) {
+        newPixels.push(new Pixel(pixels[i].x, pixels[i].y, pixels[i].lum))
+      }
+    }
+
+    for (let i = 0; i < newPixels.length; i += 1) {
+      const pixel = newPixels[i]
+      const bunny = new Graphics()
+      bunny.rect(0, 0, 3, 3)
+      bunny.x = random(0, stageWidth)
+      bunny.y = random(0, stageHeight)
+      bunny.fill({
+        color: 0xde3249,
+        // alpha: 1 - lum / 255,
+      })
+
       bunnies.push(bunny)
-      container.addChild(bunny)
+      app.stage.addChild(bunny)
     }
 
     // Move the container to the center
     container.x = 0
     container.y = 0
-
-    app.stage.addChild(container)
 
     // Center the bunny sprites in local container coordinates
     // container.pivot.x = container.width / 2
@@ -73,19 +96,43 @@ export const PixiApplication: FC<PixiApplicationProps> = (props) => {
       // Continuously rotate the container!
       // * use delta to create frame-independent transform *
       // container.rotation -= 0.01 * time.deltaTime
-      bunnies.forEach((bunny) => {
-        // bunny.rotation += Math.random() * 0.01 * time.deltaTime
-        // random move
-        // bunny.x += random(-1, 1) * time.deltaTime
-        // bunny.y += random(-1, 1) * time.deltaTime
+      bunnies.forEach((bunny, index) => {
+        const pixel = newPixels[index]
+
+        const currentPoint = new Point(bunny.x, bunny.y)
+        const targetPoint = new Point(pixel.originalX, pixel.originalY)
+
+        const vector = new Vector(
+          targetPoint.x - currentPoint.x,
+          targetPoint.y - currentPoint.y
+        )
+
+        if (vector.mag() > 5) {
+          bunny.x += vector.x / 100
+          bunny.y += vector.y / 100
+        }
       })
+    })
+    app.stage.eventMode = 'static'
+    app.stage.addEventListener('pointermove', (e) => {
+      const { x, y } = e.data
+
+      // newPixels.forEach((pixel, index) => {
+      //   const result = new Vector(pixel.x, pixel.y).sub(x, y)
+
+      //   if (result.mag() < 20) {
+      //     bunnies[index].alpha -= 0.1
+      //   }
+      // })
     })
   }, [])
 
   useEffect(() => {
     if (!isMounted) return
 
-    init()
+    setTimeout(() => {
+      init()
+    }, 1000)
   }, [init, isMounted])
 
   return (
@@ -96,9 +143,9 @@ export const PixiApplication: FC<PixiApplicationProps> = (props) => {
         style={{
           position: 'fixed',
           top: 0,
-          left: 0,
+          right: 0,
           bottom: 0,
-          width: 200,
+          width: 600,
           background: 'gray',
         }}>
         <img
@@ -109,15 +156,6 @@ export const PixiApplication: FC<PixiApplicationProps> = (props) => {
           alt='image'
           id='img'
         />
-
-        <button
-          onClick={() => {
-            const result = getImageData()
-
-            console.log(result)
-          }}>
-          click
-        </button>
       </div>
     </div>
   )
